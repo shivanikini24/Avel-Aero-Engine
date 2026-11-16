@@ -1,0 +1,45 @@
+### 1) Happy path: transient failure on step 1, retry, pause, approve, send
+[START]     Workflow REQ-1042
+[RUNNING]   Check availability
+[FAILED]    Temporary API timeout
+[RETRY]     Attempt 2
+[SUCCESS]   Aircraft availability received
+[RUNNING]   Prepare quote
+[SUCCESS]   Draft prepared
+[PAUSED]    Waiting for human approval
+[APPROVED]  Human approves draft (by auto)
+[RESUME]    Resuming at step 3: Wait for human approval
+[RUNNING]   Send quote (mock)
+[SUCCESS]   Mock send completed
+[COMPLETE]  Workflow finished
+
+### 2) Pause/resume across separate processes (state persisted to .state/)
+[START]     Workflow REQ-2001
+[RUNNING]   Check availability
+[SUCCESS]   Aircraft availability received
+[RUNNING]   Prepare quote
+[SUCCESS]   Draft prepared
+[PAUSED]    Waiting for human approval
+--- (process exits here; nothing has been sent) ---
+[APPROVED]  Human approves draft (by cli)
+[RESUME]    Resuming at step 3: Wait for human approval
+[RUNNING]   Send quote (mock)
+[SUCCESS]   Mock send completed
+[COMPLETE]  Workflow finished
+
+### 3) Retries exhausted -> HALTED, then resume after "service recovers"
+[START]     Workflow REQ-3001
+[RUNNING]   Check availability
+[SUCCESS]   Aircraft availability received
+[RUNNING]   Prepare quote
+[FAILED]    Temporary API timeout
+[RETRY]     Attempt 2
+[FAILED]    Temporary API timeout
+[RETRY]     Attempt 3
+[FAILED]    Temporary API timeout
+[HALTED]    'prepare_quote' failed after 3 attempts - fix and re-run to resume from this step
+--- re-run with the tool healthy ---
+[RESUME]    Resuming at step 2: Prepare quote
+[RUNNING]   Prepare quote
+[SUCCESS]   Draft prepared
+[PAUSED]    Waiting for human approval
